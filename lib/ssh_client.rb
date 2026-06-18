@@ -1,8 +1,15 @@
 require 'net/ssh'
 
+# SSHClient handles all remote execution of Docker commands over SSH.
+# It maintains a persistent connection and parses Docker outputs.
 class SSHClient
   attr_reader :host, :username
 
+  # Initializes the SSH Client with credentials.
+  #
+  # @param host [String] The remote server IP or hostname
+  # @param username [String] The SSH user
+  # @param password [String] The SSH password
   def initialize(host, username, password)
     @host = host
     @username = username
@@ -10,8 +17,20 @@ class SSHClient
     @ssh = nil
   end
 
+  # Connects to the remote server using Net::SSH.
+  # Enables KeepAlive to prevent idle timeouts.
+  #
+  # @return [Boolean] true if connection is successful
+  # @raise [StandardError] if the connection fails
   def connect
-    @ssh = Net::SSH.start(@host, @username, password: @password, non_interactive: true)
+    @ssh = Net::SSH.start(
+      @host,
+      @username,
+      password: @password,
+      non_interactive: true,
+      keepalive: true,
+      keepalive_interval: 60
+    )
     true
   rescue StandardError => e
     raise "Connection failed: #{e.message}"
@@ -47,6 +66,42 @@ class SSHClient
     output || ''
   rescue StandardError => e
     raise "Failed to fetch logs: #{e.message}"
+  end
+
+  # Starts a stopped Docker container.
+  #
+  # @param container_name [String] The name of the container
+  # @return [String] the command output
+  def start_container(container_name)
+    return '' unless @ssh
+    output = @ssh.exec!("docker start #{container_name}")
+    output || ''
+  rescue StandardError => e
+    raise "Failed to start container: #{e.message}"
+  end
+
+  # Stops a running Docker container.
+  #
+  # @param container_name [String] The name of the container
+  # @return [String] the command output
+  def stop_container(container_name)
+    return '' unless @ssh
+    output = @ssh.exec!("docker stop #{container_name}")
+    output || ''
+  rescue StandardError => e
+    raise "Failed to stop container: #{e.message}"
+  end
+
+  # Restarts a Docker container.
+  #
+  # @param container_name [String] The name of the container
+  # @return [String] the command output
+  def restart_container(container_name)
+    return '' unless @ssh
+    output = @ssh.exec!("docker restart #{container_name}")
+    output || ''
+  rescue StandardError => e
+    raise "Failed to restart container: #{e.message}"
   end
 
   def disconnect

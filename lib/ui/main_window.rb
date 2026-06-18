@@ -114,21 +114,32 @@ class MainWindow < Gtk::ApplicationWindow
     end
     actions_box.append(voltar_btn)
 
-    pause_icon = Gtk::Image.new(file: File.expand_path('../../assets/icons/pause.svg', __dir__))
-    pause_btn = Gtk::Button.new
-    pause_btn.set_child(pause_icon)
-    pause_btn.add_css_class('flat')
-    pause_btn.tooltip_text = 'Pause Container'
-    pause_btn.sensitive = false # Placeholder
-    actions_box.append(pause_btn)
-
+    # RUN
     run_icon = Gtk::Image.new(file: File.expand_path('../../assets/icons/play_arrow.svg', __dir__))
-    run_btn = Gtk::Button.new
-    run_btn.set_child(run_icon)
-    run_btn.add_css_class('flat')
-    run_btn.tooltip_text = 'Run Container'
-    run_btn.sensitive = false # Placeholder
-    actions_box.append(run_btn)
+    @run_btn = Gtk::Button.new
+    @run_btn.set_child(run_icon)
+    @run_btn.add_css_class('flat')
+    @run_btn.tooltip_text = 'Start Container'
+    @run_btn.signal_connect('clicked') { perform_container_action(:start) }
+    actions_box.append(@run_btn)
+
+    # STOP
+    stop_icon = Gtk::Image.new(file: File.expand_path('../../assets/icons/stop.svg', __dir__))
+    @stop_btn = Gtk::Button.new
+    @stop_btn.set_child(stop_icon)
+    @stop_btn.add_css_class('flat')
+    @stop_btn.tooltip_text = 'Stop Container'
+    @stop_btn.signal_connect('clicked') { perform_container_action(:stop) }
+    actions_box.append(@stop_btn)
+
+    # RESTART
+    restart_icon = Gtk::Image.new(file: File.expand_path('../../assets/icons/restart_alt.svg', __dir__))
+    @restart_btn = Gtk::Button.new
+    @restart_btn.set_child(restart_icon)
+    @restart_btn.add_css_class('flat')
+    @restart_btn.tooltip_text = 'Restart Container'
+    @restart_btn.signal_connect('clicked') { perform_container_action(:restart) }
+    actions_box.append(@restart_btn)
 
     # MIDDLE (Filter)
     filter_box = Gtk::Box.new(:horizontal, 10)
@@ -168,8 +179,34 @@ class MainWindow < Gtk::ApplicationWindow
     scroll.set_child(@local_logs_list)
   end
 
+  # Fetches containers from SSH in background and updates the UI.
   def load_containers
-    containers = @ssh_client.list_containers
+    Thread.new do
+      containers = @ssh_client.list_containers
+      GLib::Idle.add do
+        rebuild_containers_list_ui(containers)
+        false
+      end
+    rescue StandardError => e
+      GLib::Idle.add do
+        show_error_dialog('Failed to load containers', e.message.sub(/^Failed to list containers: /, ''))
+        false
+      end
+    end
+  end
+
+  # Rebuilds the main container ListBox with the latest data.
+  #
+  # @param containers [Array<Hash>] the containers list
+  def rebuild_containers_list_ui(containers)
+    children = []
+    child = @list_box.first_child
+    while child
+      children << child
+      child = child.next_sibling
+    end
+    children.each { |c| @list_box.remove(c) }
+
     if containers.empty?
       label = Gtk::Label.new('No containers found.')
       @list_box.append(label)
@@ -219,18 +256,30 @@ class MainWindow < Gtk::ApplicationWindow
         @list_box.append(row_box)
       end
     end
-  rescue StandardError => e
-    show_error_dialog('Failed to load containers', e.message.sub(/^Failed to list containers: /, ''))
   end
 
+  # Opens the details page for a specific container and configures actions.
+  #
+  # @param name [String] The container name
+  # @param icon_path [String] The path to the status icon SVG
+  # @param state [String] The current state of the container ('running', 'exited', etc.)
   def open_details_page(name, icon_path, state)
     @current_container = name
     @detail_name_label.text = "#{name} <#{state}>"
     @detail_icon.file = icon_path
+
+    is_running = state.downcase.include?('running')
+    @run_btn.sensitive = !is_running
+    @stop_btn.sensitive = is_running
+    @restart_btn.sensitive = is_running
+
     @stack.visible_child_name = 'details'
     load_local_logs_for_container(name)
   end
 
+  # Populates the local file manager list box for the given container.
+  #
+  # @param name [String] The container name
   def load_local_logs_for_container(name)
     children = []
     child = @local_logs_list.first_child
@@ -276,6 +325,8 @@ class MainWindow < Gtk::ApplicationWindow
     end
   end
 
+  # Dispara a busca via SSH para a data selecionada no popover.
+  # Executa de forma assíncrona exibindo um dialog de "Loading...".
   def fetch_logs_for_current_detail
     return unless @current_container && @selected_date
 
@@ -292,13 +343,61 @@ class MainWindow < Gtk::ApplicationWindow
       content = @ssh_client.fetch_logs_by_date(container, date)
       GLib::Idle.add do
         dialog.destroy
-        show_log_preview_window(container, date, content)
+        if content.to_s.strip.empty?
+          show_info_dialog('Nenhum log encontrado', "O container não gerou logs na data #{date}.")
+        else
+          show_log_preview_window(container, date, content)
+        end
         false
       end
     rescue StandardError => e
       GLib::Idle.add do
         dialog.destroy
         show_error_dialog('Error fetching logs', e.message)
+        false
+      end
+    end
+  end
+
+  # Performs a Docker action (start, stop, restart) on the current container.
+  # Uses a background thread to prevent UI freezing and shows a loading dialog.
+  #
+  # @param action [Symbol] the action to perform (:start, :stop, :restart)
+  def perform_container_action(action)
+    return unless @current_container
+
+    container = @current_container
+    dialog = Gtk::MessageDialog.new(message: "Executing #{action} on #{container}...")
+    dialog.transient_for = self
+    dialog.present
+
+    Thread.new do
+      case action
+      when :start then @ssh_client.start_container(container)
+      when :stop then @ssh_client.stop_container(container)
+      when :restart then @ssh_client.restart_container(container)
+      end
+
+      containers = @ssh_client.list_containers
+      target = containers.find { |c| c[:name] == container }
+      new_state = target ? target[:state] : 'unknown'
+
+      GLib::Idle.add do
+        dialog.destroy
+        icon_name = case new_state.downcase
+                    when 'running' then 'running.svg'
+                    when 'exited', 'dead' then 'exited.svg'
+                    else 'warning.svg'
+                    end
+        icon_path = File.expand_path("../../assets/icons/#{icon_name}", __dir__)
+        open_details_page(container, icon_path, new_state)
+        rebuild_containers_list_ui(containers)
+        false
+      end
+    rescue StandardError => e
+      GLib::Idle.add do
+        dialog.destroy
+        show_error_dialog("Error executing #{action}", e.message)
         false
       end
     end
@@ -396,6 +495,21 @@ class MainWindow < Gtk::ApplicationWindow
 
     close_btn = dialog.get_widget_for_response(Gtk::ResponseType::CLOSE)
     close_btn&.add_css_class('destructive-action')
+
+    dialog.signal_connect('response') { dialog.destroy }
+    dialog.present
+  end
+
+  # Displays an informational message dialog to the user.
+  #
+  # @param title [String] The main title text
+  # @param message [String] The secondary description text
+  def show_info_dialog(title, message)
+    dialog = Gtk::MessageDialog.new(message: title)
+    dialog.transient_for = self
+    dialog.type = :info
+    dialog.buttons = :ok
+    dialog.secondary_text = message
 
     dialog.signal_connect('response') { dialog.destroy }
     dialog.present
