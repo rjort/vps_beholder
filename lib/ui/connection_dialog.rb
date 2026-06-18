@@ -1,16 +1,24 @@
-require 'gtk3'
+require 'gtk4'
 
 class ConnectionDialog < Gtk::Dialog
   attr_reader :host, :username, :password
 
   def initialize(parent = nil)
-    super(title: "Connect to VPS", parent: parent, flags: :destroy_with_parent, buttons: [["Connect", Gtk::ResponseType::OK], ["Cancel", Gtk::ResponseType::CANCEL]])
-
+    super()
+    set_title("Connect to VPS")
     set_default_size(300, 200)
+    self.transient_for = parent if parent
+    self.modal = true
+    
+    add_button("Connect", Gtk::ResponseType::OK)
+    add_button("Cancel", Gtk::ResponseType::CANCEL)
 
     vbox = self.content_area
     vbox.spacing = 10
-    vbox.margin = 10
+    vbox.margin_start = 10
+    vbox.margin_end = 10
+    vbox.margin_top = 10
+    vbox.margin_bottom = 10
 
     @host_entry = Gtk::Entry.new
     @host_entry.placeholder_text = "Host (e.g. 192.168.1.100)"
@@ -20,13 +28,11 @@ class ConnectionDialog < Gtk::Dialog
     
     @pass_entry = Gtk::Entry.new
     @pass_entry.placeholder_text = "Password"
-    @pass_entry.visibility = false # Hide password characters
+    @pass_entry.visibility = false
 
-    vbox.pack_start(@host_entry, expand: false, fill: false, padding: 0)
-    vbox.pack_start(@user_entry, expand: false, fill: false, padding: 0)
-    vbox.pack_start(@pass_entry, expand: false, fill: false, padding: 0)
-
-    show_all
+    vbox.append(@host_entry)
+    vbox.append(@user_entry)
+    vbox.append(@pass_entry)
 
     signal_connect("response") do |_, response_id|
       if response_id == Gtk::ResponseType::OK

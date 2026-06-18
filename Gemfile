@@ -1,4 +1,4 @@
 source "https://rubygems.org"
 
-gem "gtk3"
+gem "gtk4"
 gem "net-ssh"
