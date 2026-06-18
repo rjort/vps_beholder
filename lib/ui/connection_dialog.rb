@@ -40,23 +40,23 @@ class ConnectionDialog < Gtk::ApplicationWindow
     button_box.halign = Gtk::Align::END
     vbox.append(button_box)
 
-    cancel_btn = Gtk::Button.new
-    cancel_btn.label = 'Cancel'
-    connect_btn = Gtk::Button.new
-    connect_btn.label = 'Connect'
+    @cancel_btn = Gtk::Button.new
+    @cancel_btn.label = 'Cancel'
+    @connect_btn = Gtk::Button.new
+    @connect_btn.label = 'Connect'
 
-    connect_btn.add_css_class('suggested-action')
-    set_default_widget(connect_btn)
+    @connect_btn.add_css_class('suggested-action')
+    set_default_widget(@connect_btn)
 
-    button_box.append(cancel_btn)
-    button_box.append(connect_btn)
+    button_box.append(@cancel_btn)
+    button_box.append(@connect_btn)
 
-    cancel_btn.signal_connect('clicked') do
+    @cancel_btn.signal_connect('clicked') do
       destroy
       app.quit
     end
 
-    connect_btn.signal_connect('clicked') do
+    @connect_btn.signal_connect('clicked') do
       input = @host_entry.text
       if input.include?('@')
         @username, @host = input.split('@', 2)
@@ -70,6 +70,37 @@ class ConnectionDialog < Gtk::ApplicationWindow
 
       on_connect.call(self) if block_given?
     end
+  end
+
+  def start_connecting_animation
+    @connecting = true
+    @connect_btn.sensitive = false
+    @cancel_btn.sensitive = false
+    @pass_entry.sensitive = false
+    @host_entry.sensitive = false
+    @save_check.sensitive = false
+    @dots = 0
+    @connect_btn.label = 'Connecting...'
+
+    GLib::Timeout.add(200) do
+      if @connecting
+        @dots = (@dots + 1) % 4
+        @connect_btn.label = 'Connecting' + ('.' * @dots)
+        true
+      else
+        @connect_btn.label = 'Connect'
+        @connect_btn.sensitive = true
+        @cancel_btn.sensitive = true
+        @pass_entry.sensitive = true
+        @host_entry.sensitive = true
+        @save_check.sensitive = true
+        false
+      end
+    end
+  end
+
+  def stop_connecting_animation
+    @connecting = false
   end
 
   private
