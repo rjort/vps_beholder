@@ -1,12 +1,13 @@
 require 'gtk4'
 
 class MainWindow < Gtk::ApplicationWindow
-  def initialize(app, ssh_client)
+  def initialize(app, ssh_client, &on_logout)
     super(app)
     @ssh_client = ssh_client
-    
-    set_title("VPS Beholder - #{ssh_client.host}")
-    set_default_size(400, 500)
+    @on_logout = on_logout
+
+    set_title('VPS Beholder')
+    set_default_size(900, 600)
 
     setup_ui
     load_containers
@@ -20,11 +21,34 @@ class MainWindow < Gtk::ApplicationWindow
     vbox.margin_end = 10
     vbox.margin_top = 10
     vbox.margin_bottom = 10
-    self.set_child(vbox)
+    set_child(vbox)
 
-    label = Gtk::Label.new("Docker Containers on #{@ssh_client.host}")
+    header_box = Gtk::Box.new(:horizontal, 10)
+    vbox.append(header_box)
+
+    label = Gtk::Label.new("User: #{@ssh_client.username} - Host: #{@ssh_client.host}")
     label.halign = Gtk::Align::START
-    vbox.append(label)
+    label.hexpand = true
+    header_box.append(label)
+
+    logout_label = Gtk::Label.new
+    logout_label.set_markup('<b>LOGOUT</b>')
+    logout_btn = Gtk::Button.new
+    logout_btn.set_child(logout_label)
+    logout_btn.add_css_class('flat')
+    logout_btn.add_css_class('logout-btn')
+
+    provider = Gtk::CssProvider.new
+    provider.load(data: 'button.logout-btn:hover { background-color: rgba(128, 128, 128, 0.4); }')
+    logout_btn.style_context.add_provider(provider, Gtk::StyleProvider::PRIORITY_APPLICATION)
+
+    header_box.append(logout_btn)
+
+    logout_btn.signal_connect('clicked') do
+      @ssh_client&.disconnect
+      @on_logout&.call
+      destroy
+    end
 
     scroll = Gtk::ScrolledWindow.new
     scroll.set_policy(:automatic, :automatic)
@@ -36,37 +60,41 @@ class MainWindow < Gtk::ApplicationWindow
   end
 
   def load_containers
-    begin
-      containers = @ssh_client.list_containers
-      if containers.empty?
-        label = Gtk::Label.new("No containers found.")
+    containers = @ssh_client.list_containers
+    if containers.empty?
+      label = Gtk::Label.new('No containers found.')
+      @list_box.append(label)
+    else
+      containers.each do |container_name|
+        next if container_name.strip.empty?
+
+        label = Gtk::Label.new(container_name)
+        label.halign = Gtk::Align::START
+        label.margin_start = 5
+        label.margin_end = 5
+        label.margin_top = 5
+        label.margin_bottom = 5
         @list_box.append(label)
-      else
-        containers.each do |container_name|
-          next if container_name.strip.empty?
-          label = Gtk::Label.new(container_name)
-          label.halign = Gtk::Align::START
-          label.margin_start = 5
-          label.margin_end = 5
-          label.margin_top = 5
-          label.margin_bottom = 5
-          @list_box.append(label)
-        end
       end
-    rescue StandardError => e
-      show_error_dialog("Failed to load containers:\n#{e.message}")
     end
+  rescue StandardError => e
+    show_error_dialog('Failed to load containers', e.message.sub(/^Failed to list containers: /, ''))
   end
 
-  def show_error_dialog(message)
+  def show_error_dialog(title, message)
     dialog = Gtk::MessageDialog.new(
       transient_for: self,
       flags: :destroy_with_parent,
       type: :error,
       buttons: :close,
-      message: message
+      message: title
     )
-    dialog.signal_connect("response") { dialog.destroy }
+    dialog.secondary_text = message
+
+    close_btn = dialog.get_widget_for_response(Gtk::ResponseType::CLOSE)
+    close_btn&.add_css_class('destructive-action')
+
+    dialog.signal_connect('response') { dialog.destroy }
     dialog.present
   end
 end
