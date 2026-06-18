@@ -39,9 +39,9 @@ RSpec.describe SSHClient do
       client.connect
     end
 
-    it 'executes docker ps and returns an array of container names' do
-      expect(ssh_session).to receive(:exec!).with("docker ps --format '{{.Names}}'").and_return("container1\ncontainer2\n")
-      expect(client.list_containers).to eq(%w[container1 container2])
+    it 'executes docker ps -a and returns an array of hashes with name and state' do
+      expect(ssh_session).to receive(:exec!).with("docker ps -a --format '{{.Names}}|{{.State}}'").and_return("container1|running\ncontainer2|exited\n")
+      expect(client.list_containers).to eq([{ name: 'container1', state: 'running' }, { name: 'container2', state: 'exited' }])
     end
 
     it 'returns an empty array if output is nil' do
@@ -52,6 +52,17 @@ RSpec.describe SSHClient do
     it 'raises an error if the execution fails' do
       expect(ssh_session).to receive(:exec!).and_raise(StandardError.new('Docker not found'))
       expect { client.list_containers }.to raise_error(RuntimeError, /Failed to list containers: Docker not found/)
+    end
+  end
+
+  describe '#fetch_logs_by_date' do
+    let(:ssh_session) { double('ssh_session') }
+
+    it 'returns logs for a specific date' do
+      allow(Net::SSH).to receive(:start).and_return(ssh_session)
+      expect(ssh_session).to receive(:exec!).with('docker logs --since "2026-06-18T00:00:00Z" --until "2026-06-18T23:59:59Z" container1').and_return('logs from the 18th')
+      client.connect
+      expect(client.fetch_logs_by_date('container1', '2026-06-18')).to eq('logs from the 18th')
     end
   end
 end
