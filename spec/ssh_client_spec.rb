@@ -17,8 +17,13 @@ RSpec.describe SSHClient do
   describe '#connect' do
     context 'when connection succeeds' do
       it 'starts an SSH connection and returns true' do
-        expect(Net::SSH).to receive(:start).with(host, username, password: password,
-                                                                 non_interactive: true).and_return(double('ssh_session'))
+        expect(Net::SSH).to receive(:start).with(
+          host, username,
+          password: password,
+          non_interactive: true,
+          keepalive: true,
+          keepalive_interval: 60
+        ).and_return(double('ssh_session'))
         expect(client.connect).to be(true)
       end
     end
@@ -41,7 +46,8 @@ RSpec.describe SSHClient do
 
     it 'executes docker ps -a and returns an array of hashes with name and state' do
       expect(ssh_session).to receive(:exec!).with("docker ps -a --format '{{.Names}}|{{.State}}'").and_return("container1|running\ncontainer2|exited\n")
-      expect(client.list_containers).to eq([{ name: 'container1', state: 'running' }, { name: 'container2', state: 'exited' }])
+      expect(client.list_containers).to eq([{ name: 'container1', state: 'running' },
+                                            { name: 'container2', state: 'exited' }])
     end
 
     it 'returns an empty array if output is nil' do
