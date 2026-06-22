@@ -106,11 +106,10 @@ class MainWindow < Gtk::ApplicationWindow
   end
 
   def show_error_dialog(title, message)
-    dialog = Gtk::MessageDialog.new(message: title)
+    dialog = Gtk::MessageDialog.new(message: title, buttons: :close)
     dialog.transient_for = self
     dialog.secondary_text = message
-    dialog.type = :error
-    dialog.buttons = :close
+    dialog.message_type = :error
 
     close_btn = dialog.get_widget_for_response(Gtk::ResponseType::CLOSE)
     close_btn&.add_css_class('destructive-action')
@@ -120,10 +119,9 @@ class MainWindow < Gtk::ApplicationWindow
   end
 
   def show_info_dialog(title, message)
-    dialog = Gtk::MessageDialog.new(message: title)
+    dialog = Gtk::MessageDialog.new(message: title, buttons: :ok)
     dialog.transient_for = self
-    dialog.type = :info
-    dialog.buttons = :ok
+    dialog.message_type = :info
     dialog.secondary_text = message
 
     dialog.signal_connect('response') { dialog.destroy }
