@@ -12,7 +12,7 @@ module Components
     # @param parent [Gtk::Window] The parent window
     # @param profile [Hash] The profile being connected
     def initialize(parent, profile)
-      super(parent, title: "Conectar: #{profile[:alias]}", default_width: 350, default_height: 220)
+      super(parent, title: "Conectar: #{profile[:alias]}", default_width: 350)
       @profile = profile
       setup_ui
     end

@@ -7,7 +7,7 @@ module Components
   class BaseDialog < Gtk::Dialog
     attr_reader :content_vbox
 
-    def initialize(parent, title:, default_width: 350, default_height: 220)
+    def initialize(parent, title:, default_width: 350, default_height: -1)
       super()
       self.title = title
       self.transient_for = parent

@@ -11,7 +11,7 @@ module Components
     # Initialize the dialog
     # @param parent [Gtk::Window] The parent window
     def initialize(parent)
-      super(parent, title: 'Adicionar Host', default_width: 350, default_height: 300)
+      super(parent, title: 'Adicionar Host', default_width: 350)
       setup_ui
     end
 
