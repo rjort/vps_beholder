@@ -195,7 +195,7 @@ module Components
       container = @current_container
       date = @selected_date
 
-      dialog = Gtk::MessageDialog.new(message: 'Loading logs...')
+      dialog = Gtk::MessageDialog.new(message: 'Loading logs...', buttons: :none)
       dialog.transient_for = @parent_window
       dialog.present
 
@@ -223,7 +223,7 @@ module Components
       return unless @current_container
 
       container = @current_container
-      dialog = Gtk::MessageDialog.new(message: "Executing #{action} on #{container}...")
+      dialog = Gtk::MessageDialog.new(message: "Executing #{action} on #{container}...", buttons: :none)
       dialog.transient_for = @parent_window
       dialog.present
 
