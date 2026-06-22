@@ -54,8 +54,9 @@ module Components
       
       # Add spacing between buttons and set default response
       save_btn.margin_start = 10
-      cancel_btn.margin_bottom = 10
-      save_btn.margin_bottom = 10
+      save_btn.margin_end = 20
+      cancel_btn.margin_bottom = 15
+      save_btn.margin_bottom = 15
       set_default_response(Gtk::ResponseType::ACCEPT)
 
       signal_connect('response') do |_, response_id|
