@@ -28,6 +28,9 @@ class MainWindow < Gtk::ApplicationWindow
       button.logout-btn:hover { background-color: rgba(128, 128, 128, 0.4); }
       .actions-box button { margin-left: 5px; }
       .calendar-btn { margin-bottom: 10px; }
+      .edit-btn-style {
+        padding: 6px 16px;
+      }
     ")
     Gtk::StyleContext.add_provider_for_display(Gdk::Display.default, provider, Gtk::StyleProvider::PRIORITY_APPLICATION)
   end

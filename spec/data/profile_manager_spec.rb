@@ -57,4 +57,23 @@ RSpec.describe Storage::ProfileManager do
       expect(loaded.first[:alias]).to eq('H2')
     end
   end
+
+  describe '.update_profile' do
+    it 'updates an existing profile by id' do
+      p = described_class.add_profile('Old Name', '10.0.0.1', 'admin')
+      updated = described_class.update_profile(p[:id], { alias: 'New Name', host: '10.0.0.9' })
+
+      expect(updated[:alias]).to eq('New Name')
+      expect(updated[:host]).to eq('10.0.0.9')
+      expect(updated[:username]).to eq('admin')
+
+      loaded = described_class.load_profiles.first
+      expect(loaded[:alias]).to eq('New Name')
+      expect(loaded[:host]).to eq('10.0.0.9')
+    end
+
+    it 'returns nil if the profile id does not exist' do
+      expect(described_class.update_profile('nonexistent-uuid', { alias: 'New' })).to be_nil
+    end
+  end
 end

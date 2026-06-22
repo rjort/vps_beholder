@@ -124,6 +124,7 @@ class HomeWindow < Gtk::ApplicationWindow
     edit_btn = Gtk::Button.new
     edit_btn.set_child(edit_icon)
     edit_btn.tooltip_text = 'Editar Host'
+    edit_btn.add_css_class('edit-btn-style')
     edit_btn.signal_connect('clicked') do
       show_add_profile_dialog(profile)
     end
@@ -143,15 +144,34 @@ class HomeWindow < Gtk::ApplicationWindow
     row_box
   end
 
+  # Shows the dialog to add or edit a profile.
+  # @param profile [Hash, nil] The profile to edit, or nil to add a new profile.
   def show_add_profile_dialog(profile = nil)
     dialog = Components::AddProfileDialog.new(self, profile)
-    dialog.on_save = proc do |name_alias, host, username|
+    dialog.on_save = proc do |name_alias, host, username, password = nil|
       if profile
-        Storage::ProfileManager.update_profile(profile[:id], {
-                                                 alias: name_alias,
-                                                 host: host,
-                                                 username: username
-                                               })
+        # Se o host ou usuário mudou, remova a senha salva no registro anterior
+        if profile[:password_saved] && (profile[:host] != host || profile[:username] != username)
+          Storage::SecretManager.delete(profile[:host], profile[:username])
+        end
+
+        if password && !password.empty?
+          Storage::SecretManager.save(host, username, password)
+          Storage::ProfileManager.update_profile(profile[:id], {
+                                                   alias: name_alias,
+                                                   host: host,
+                                                   username: username,
+                                                   password_saved: true
+                                                 })
+        else
+          Storage::SecretManager.delete(host, username) if profile[:password_saved]
+          Storage::ProfileManager.update_profile(profile[:id], {
+                                                   alias: name_alias,
+                                                   host: host,
+                                                   username: username,
+                                                   password_saved: false
+                                                 })
+        end
       else
         Storage::ProfileManager.add_profile(name_alias, host, username)
       end
