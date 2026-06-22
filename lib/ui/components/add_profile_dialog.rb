@@ -15,6 +15,7 @@ module Components
       self.title = 'Adicionar Host'
       self.transient_for = parent
       self.modal = true
+      set_default_size(350, 300)
 
       setup_ui
       setup_buttons
@@ -41,14 +42,21 @@ module Components
     def create_input(parent_box, placeholder)
       entry = Gtk::Entry.new
       entry.placeholder_text = placeholder
+      entry.activates_default = true
       parent_box.append(entry)
       entry
     end
 
     def setup_buttons
-      add_button('Cancelar', Gtk::ResponseType::CANCEL)
+      cancel_btn = add_button('Cancelar', Gtk::ResponseType::CANCEL)
       save_btn = add_button('Salvar', Gtk::ResponseType::ACCEPT)
       save_btn.add_css_class('suggested-action')
+      
+      # Add spacing between buttons and set default response
+      save_btn.margin_start = 10
+      cancel_btn.margin_bottom = 10
+      save_btn.margin_bottom = 10
+      set_default_response(Gtk::ResponseType::ACCEPT)
 
       signal_connect('response') do |_, response_id|
         if response_id == Gtk::ResponseType::ACCEPT

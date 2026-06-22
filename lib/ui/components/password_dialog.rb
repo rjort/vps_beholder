@@ -16,6 +16,7 @@ module Components
       self.title = "Conectar: #{profile[:alias]}"
       self.transient_for = parent
       self.modal = true
+      set_default_size(350, 220)
       @profile = profile
 
       setup_ui
@@ -38,6 +39,7 @@ module Components
 
       @password_entry = Gtk::PasswordEntry.new
       @password_entry.placeholder_text = 'Senha SSH'
+      @password_entry.activates_default = true
       vbox.append(@password_entry)
 
       @save_pw_check = Gtk::CheckButton.new
@@ -46,9 +48,15 @@ module Components
     end
 
     def setup_buttons
-      add_button('Cancelar', Gtk::ResponseType::CANCEL)
+      cancel_btn = add_button('Cancelar', Gtk::ResponseType::CANCEL)
       connect_btn = add_button('Conectar', Gtk::ResponseType::ACCEPT)
       connect_btn.add_css_class('suggested-action')
+      
+      # Add spacing between buttons and set default response
+      connect_btn.margin_start = 10
+      cancel_btn.margin_bottom = 10
+      connect_btn.margin_bottom = 10
+      set_default_response(Gtk::ResponseType::ACCEPT)
 
       signal_connect('response') do |_, response_id|
         if response_id == Gtk::ResponseType::ACCEPT

@@ -109,7 +109,7 @@ class MainWindow < Gtk::ApplicationWindow
     dialog = Gtk::MessageDialog.new(message: title)
     dialog.transient_for = self
     dialog.secondary_text = message
-    dialog.type = :error
+    dialog.message_type = :error
     dialog.buttons = :close
 
     close_btn = dialog.get_widget_for_response(Gtk::ResponseType::CLOSE)
@@ -122,7 +122,7 @@ class MainWindow < Gtk::ApplicationWindow
   def show_info_dialog(title, message)
     dialog = Gtk::MessageDialog.new(message: title)
     dialog.transient_for = self
-    dialog.type = :info
+    dialog.message_type = :info
     dialog.buttons = :ok
     dialog.secondary_text = message
 
