@@ -38,19 +38,26 @@ module Components
     end
 
     def setup_action_buttons(accept_label, &on_accept)
-      cancel_btn = add_button('Cancelar', Gtk::ResponseType::CANCEL)
-      accept_btn = add_button(accept_label, Gtk::ResponseType::ACCEPT)
-      accept_btn.add_css_class('suggested-action')
-      
-      # Standard spacing
-      accept_btn.margin_start = 10
-      accept_btn.margin_end = 20
-      cancel_btn.margin_bottom = 15
-      accept_btn.margin_bottom = 15
-      set_default_response(Gtk::ResponseType::ACCEPT)
+      button_box = Gtk::Box.new(:horizontal, 10)
+      button_box.halign = Gtk::Align::END
+      button_box.margin_top = 10
+      @content_vbox.append(button_box)
 
-      signal_connect('response') do |_, response_id|
-        on_accept.call if response_id == Gtk::ResponseType::ACCEPT
+      cancel_btn = Gtk::Button.new(label: 'Cancelar')
+      accept_btn = Gtk::Button.new(label: accept_label)
+      accept_btn.add_css_class('suggested-action')
+
+      button_box.append(cancel_btn)
+      button_box.append(accept_btn)
+
+      set_default_widget(accept_btn)
+
+      cancel_btn.signal_connect('clicked') do
+        destroy
+      end
+
+      accept_btn.signal_connect('clicked') do
+        on_accept.call
         destroy
       end
     end
