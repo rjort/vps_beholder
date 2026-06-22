@@ -10,18 +10,28 @@ module Components
 
     # Initialize the dialog
     # @param parent [Gtk::Window] The parent window
-    def initialize(parent)
-      super(parent, title: 'Adicionar Host', default_width: 350)
-      setup_ui
+    # @param profile [Hash, nil] Optional profile to edit
+    def initialize(parent, profile = nil)
+      @is_edit = !profile.nil?
+      title = @is_edit ? 'Editar Host' : 'Adicionar Host'
+      super(parent, title: title, default_width: 350)
+      setup_ui(profile)
     end
 
     private
 
-    def setup_ui
+    def setup_ui(profile)
       @alias_entry = create_input('Apelido (ex: Meu Servidor)')
       @host_entry = create_input('Host / IP')
       @user_entry = create_input('Usuário SSH (ex: root)')
-      @user_entry.text = 'root'
+
+      if profile
+        @alias_entry.text = profile[:alias] || ''
+        @host_entry.text = profile[:host] || ''
+        @user_entry.text = profile[:username] || 'root'
+      else
+        @user_entry.text = 'root'
+      end
 
       setup_action_buttons('Salvar') do
         name_alias = @alias_entry.text.strip

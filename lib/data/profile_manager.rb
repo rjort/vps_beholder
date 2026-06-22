@@ -75,11 +75,11 @@ module Storage
     def self.delete_profile(id)
       profiles = load_profiles
       profile = profiles.find { |p| p[:id] == id }
-      if profile
-        Storage::SecretManager.delete(profile[:host], profile[:username]) if profile[:password_saved]
-        profiles.reject! { |p| p[:id] == id }
-        save_profiles(profiles)
-      end
+      return unless profile
+
+      Storage::SecretManager.delete(profile[:host], profile[:username]) if profile[:password_saved]
+      profiles.reject! { |p| p[:id] == id }
+      save_profiles(profiles)
     end
   end
 end

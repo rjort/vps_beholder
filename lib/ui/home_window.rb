@@ -120,6 +120,15 @@ class HomeWindow < Gtk::ApplicationWindow
     offline_btn.signal_connect('clicked') { @on_offline_logs&.call(profile) }
     row_box.append(offline_btn)
 
+    edit_icon = Gtk::Image.new(file: File.expand_path('../../assets/icons/edit.svg', __dir__))
+    edit_btn = Gtk::Button.new
+    edit_btn.set_child(edit_icon)
+    edit_btn.tooltip_text = 'Editar Host'
+    edit_btn.signal_connect('clicked') do
+      show_add_profile_dialog(profile)
+    end
+    row_box.append(edit_btn)
+
     del_icon = Gtk::Image.new(file: File.expand_path('../../assets/icons/delete.svg', __dir__))
     del_btn = Gtk::Button.new
     del_btn.set_child(del_icon)
@@ -134,10 +143,18 @@ class HomeWindow < Gtk::ApplicationWindow
     row_box
   end
 
-  def show_add_profile_dialog
-    dialog = Components::AddProfileDialog.new(self)
+  def show_add_profile_dialog(profile = nil)
+    dialog = Components::AddProfileDialog.new(self, profile)
     dialog.on_save = proc do |name_alias, host, username|
-      Storage::ProfileManager.add_profile(name_alias, host, username)
+      if profile
+        Storage::ProfileManager.update_profile(profile[:id], {
+                                                 alias: name_alias,
+                                                 host: host,
+                                                 username: username
+                                               })
+      else
+        Storage::ProfileManager.add_profile(name_alias, host, username)
+      end
       load_profiles
     end
     dialog.present
