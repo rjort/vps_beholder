@@ -110,7 +110,7 @@ class MainWindow < Gtk::ApplicationWindow
     dialog.transient_for = self
     dialog.secondary_text = message
     dialog.message_type = :error
-    dialog.buttons = :close
+    dialog.add_button('Close', Gtk::ResponseType::CLOSE)
 
     close_btn = dialog.get_widget_for_response(Gtk::ResponseType::CLOSE)
     close_btn&.add_css_class('destructive-action')
@@ -123,7 +123,7 @@ class MainWindow < Gtk::ApplicationWindow
     dialog = Gtk::MessageDialog.new(message: title)
     dialog.transient_for = self
     dialog.message_type = :info
-    dialog.buttons = :ok
+    dialog.add_button('OK', Gtk::ResponseType::OK)
     dialog.secondary_text = message
 
     dialog.signal_connect('response') { dialog.destroy }
