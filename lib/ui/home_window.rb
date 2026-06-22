@@ -2,6 +2,7 @@
 
 require 'gtk4'
 require_relative '../data/profile_manager'
+require_relative '../data/secret_manager'
 require_relative 'components/add_profile_dialog'
 require_relative 'components/password_dialog'
 
@@ -143,9 +144,20 @@ class HomeWindow < Gtk::ApplicationWindow
   end
 
   def show_password_dialog(profile)
-    # If password was saved securely (Epic 2 details later), we could skip.
+    if profile[:password_saved]
+      saved_password = Storage::SecretManager.get(profile[:host], profile[:username])
+      if saved_password
+        @on_start_connection&.call(profile, saved_password, true)
+        return
+      end
+    end
+
     dialog = Components::PasswordDialog.new(self, profile)
     dialog.on_connect = proc do |password, save_pw|
+      if save_pw
+        Storage::SecretManager.save(profile[:host], profile[:username], password)
+        Storage::ProfileManager.update_profile(profile[:id], { password_saved: true })
+      end
       @on_start_connection&.call(profile, password, save_pw)
     end
     dialog.present

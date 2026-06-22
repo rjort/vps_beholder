@@ -3,6 +3,7 @@
 require 'json'
 require 'fileutils'
 require 'securerandom'
+require_relative 'secret_manager'
 
 module Storage
   # Manages the local JSON database for host profiles.
@@ -55,12 +56,30 @@ module Storage
       new_profile
     end
 
-    # Deletes a profile by its ID.
+    # Updates an existing profile.
+    # @param id [String] The UUID of the profile.
+    # @param attributes [Hash] The attributes to update.
+    # @return [Hash, nil] The updated profile, or nil if not found.
+    def self.update_profile(id, attributes)
+      profiles = load_profiles
+      index = profiles.find_index { |p| p[:id] == id }
+      return nil unless index
+
+      profiles[index].merge!(attributes)
+      save_profiles(profiles)
+      profiles[index]
+    end
+
+    # Deletes a profile by its ID and removes its saved password if any.
     # @param id [String] The UUID of the profile.
     def self.delete_profile(id)
       profiles = load_profiles
-      profiles.reject! { |p| p[:id] == id }
-      save_profiles(profiles)
+      profile = profiles.find { |p| p[:id] == id }
+      if profile
+        Storage::SecretManager.delete(profile[:host], profile[:username]) if profile[:password_saved]
+        profiles.reject! { |p| p[:id] == id }
+        save_profiles(profiles)
+      end
     end
   end
 end
