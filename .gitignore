@@ -1,0 +1,8 @@
+/.ruby-lsp/
+/vendor/
+/AppDir/
+*.AppImage
+*.gem
+*.o
+*.so
+.DS_Store

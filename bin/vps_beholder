@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Load user environment variables so GUI launchers can find Ruby version managers (asdf, rbenv, rvm)
+if [ -f "$HOME/.bashrc" ]; then
+    source "$HOME/.bashrc" 2>/dev/null
+fi
+if [ -f "$HOME/.zshrc" ]; then
+    source "$HOME/.zshrc" 2>/dev/null
+fi
+if [ -f "$HOME/.asdf/asdf.sh" ]; then
+    source "$HOME/.asdf/asdf.sh" 2>/dev/null
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+
+cd ~/.local/share/vps_beholder && bundle exec ruby main.rb "$@"
