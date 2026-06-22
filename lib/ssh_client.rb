@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'net/ssh'
 
 # SSHClient handles all remote execution of Docker commands over SSH.
@@ -38,6 +40,7 @@ class SSHClient
 
   def list_containers
     return [] unless @ssh
+
     output = @ssh.exec!("docker ps -a --format '{{.Names}}|{{.State}}'")
     return [] unless output
 
@@ -51,6 +54,7 @@ class SSHClient
 
   def fetch_logs(container_name)
     return '' unless @ssh
+
     output = @ssh.exec!("docker logs #{container_name}")
     output || ''
   rescue StandardError => e
@@ -59,9 +63,10 @@ class SSHClient
 
   def fetch_logs_by_date(container_name, date_str)
     return '' unless @ssh
+
     since_t = "#{date_str}T00:00:00Z"
     until_t = "#{date_str}T23:59:59Z"
-    
+
     output = @ssh.exec!("docker logs --since \"#{since_t}\" --until \"#{until_t}\" #{container_name}")
     output || ''
   rescue StandardError => e
@@ -74,6 +79,7 @@ class SSHClient
   # @return [String] the command output
   def start_container(container_name)
     return '' unless @ssh
+
     output = @ssh.exec!("docker start #{container_name}")
     output || ''
   rescue StandardError => e
@@ -86,6 +92,7 @@ class SSHClient
   # @return [String] the command output
   def stop_container(container_name)
     return '' unless @ssh
+
     output = @ssh.exec!("docker stop #{container_name}")
     output || ''
   rescue StandardError => e
@@ -98,6 +105,7 @@ class SSHClient
   # @return [String] the command output
   def restart_container(container_name)
     return '' unless @ssh
+
     output = @ssh.exec!("docker restart #{container_name}")
     output || ''
   rescue StandardError => e

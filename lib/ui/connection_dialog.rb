@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'gtk4'
 require 'json'
 
@@ -85,7 +87,7 @@ class ConnectionDialog < Gtk::ApplicationWindow
     GLib::Timeout.add(200) do
       if @connecting
         @dots = (@dots + 1) % 4
-        @connect_btn.label = 'Connecting' + ('.' * @dots)
+        @connect_btn.label = "Connecting#{'.' * @dots}"
         true
       else
         @connect_btn.label = 'Connect'

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=VPS Beholder
+Comment=Monitor Docker containers on remote VPS servers over SSH
+Exec=vps_beholder
+Icon=com.vps.beholder
+Terminal=false
+Type=Application
+Categories=Development;System;Network;
+StartupNotify=true
