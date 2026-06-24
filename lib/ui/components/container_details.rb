@@ -17,10 +17,12 @@ module Components
     #
     # @param ssh_client [SSHClient] Client used for actions and log fetching
     # @param parent_window [Gtk::Window] The parent window for dialogs
-    def initialize(ssh_client, parent_window)
+    # @param profile [Hash] The active profile
+    def initialize(ssh_client, parent_window, profile)
       super(:vertical, 10)
       @ssh_client = ssh_client
       @parent_window = parent_window
+      @profile = profile
       @open_windows = []
 
       self.margin_start = 10
@@ -59,17 +61,13 @@ module Components
       end
       children.each { |c| @local_logs_list.remove(c) }
 
-      base_dir = File.expand_path('~/.vps_beholder/logs')
-      container_dir = File.join(base_dir, @current_container)
-      return unless Dir.exist?(container_dir)
-
-      files = Dir.glob(File.join(container_dir, '*.log')).sort.reverse
+      files = Storage::LogManager.list_logs(@profile[:id], @current_container)
       if files.empty?
         @local_logs_list.append(Gtk::Label.new('Nenhum log salvo localmente.'))
         return
       end
 
-      files.each do |file_path|
+      files.each do |file_name|
         row_box = Gtk::Box.new(:horizontal, 10)
         row_box.margin_start = 10
         row_box.margin_end = 10
@@ -79,7 +77,6 @@ module Components
         icon = Gtk::Image.new(file: File.expand_path('../../../assets/icons/terminal.svg', __dir__))
         row_box.append(icon)
 
-        file_name = File.basename(file_path)
         name_label = Gtk::Label.new(file_name)
         name_label.halign = Gtk::Align::START
         name_label.hexpand = true
@@ -87,7 +84,7 @@ module Components
 
         open_btn = Gtk::Button.new(label: 'Abrir')
         open_btn.signal_connect('clicked') do
-          show_read_window(file_name, file_path)
+          show_read_window(file_name)
         end
         row_box.append(open_btn)
 
@@ -278,8 +275,10 @@ module Components
       viewer.present
     end
 
-    def show_read_window(file_name, file_path)
-      content = File.read(file_path)
+    def show_read_window(file_name)
+      content = Storage::LogManager.read_log(@profile[:id], @current_container, file_name)
+      raise 'Log content not found' unless content
+
       viewer = LogPreviewWindow.new(
         title: "Lendo: #{file_name}",
         content: content,

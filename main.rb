@@ -4,6 +4,11 @@ require 'gtk4'
 require_relative 'lib/ssh_client'
 require_relative 'lib/ui/home_window'
 require_relative 'lib/ui/main_window'
+require_relative 'lib/ui/offline_main_window'
+require_relative 'lib/data/log_manager'
+
+# Clean up any legacy logs (pre Epic 3)
+Storage::LogManager.delete_legacy_logs
 
 app = Gtk::Application.new('com.vps.beholder', :flags_none)
 
@@ -26,7 +31,7 @@ def start_home_flow(application)
         dialog.destroy
         home.destroy
 
-        window = MainWindow.new(application, ssh_client) do
+        window = MainWindow.new(application, ssh_client, profile) do
           start_home_flow(application)
         end
         window.present
@@ -50,15 +55,12 @@ def start_home_flow(application)
   end
 
   home.on_offline_logs = proc do |profile|
-    info = Gtk::MessageDialog.new(
-      transient_for: home,
-      type: :info,
-      buttons: :ok,
-      message: 'Modo Offline',
-      secondary_text: "Modo offline para #{profile[:alias]} será implementado na Epic 3."
-    )
-    info.signal_connect('response') { info.destroy }
-    info.present
+    home.destroy
+
+    window = OfflineMainWindow.new(application, profile) do
+      start_home_flow(application)
+    end
+    window.present
   end
 
   home.present

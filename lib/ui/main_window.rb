@@ -8,9 +8,10 @@ require_relative 'components/container_details'
 # MainWindow acts as the main application orchestrator, managing the Stack
 # and handling high-level dialogs and transitions between components.
 class MainWindow < Gtk::ApplicationWindow
-  def initialize(app, ssh_client, &on_logout)
+  def initialize(app, ssh_client, profile, &on_logout)
     super(app)
     @ssh_client = ssh_client
+    @profile = profile
     @on_logout = on_logout
 
     set_title('VPS Beholder')
@@ -39,7 +40,7 @@ class MainWindow < Gtk::ApplicationWindow
 
     # 1. Initialize Components
     @list_component = Components::ContainerList.new(@ssh_client)
-    @details_component = Components::ContainerDetails.new(@ssh_client, self)
+    @details_component = Components::ContainerDetails.new(@ssh_client, self, @profile)
 
     # 2. Wire Events
     wire_list_events
@@ -95,12 +96,7 @@ class MainWindow < Gtk::ApplicationWindow
   end
 
   def export_current_logs(container, date, content)
-    base_dir = File.expand_path('~/.vps_beholder/logs')
-    container_dir = File.join(base_dir, container)
-    FileUtils.mkdir_p(container_dir)
-
-    file_path = File.join(container_dir, "#{date}.log")
-    File.write(file_path, content)
+    Storage::LogManager.save_log(@profile[:id], container, date, content)
   rescue StandardError => e
     show_error_dialog('Error saving log', e.message)
   end
