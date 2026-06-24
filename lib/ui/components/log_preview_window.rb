@@ -20,7 +20,7 @@ module Components
     def initialize(title:, content:, mode: :preview, container: nil, date: nil)
       super()
       set_title(title)
-      set_default_size(800, 600)
+      set_default_size(1000, 600)
 
       @container = container
       @date = date
