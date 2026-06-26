@@ -76,4 +76,53 @@ RSpec.describe Storage::LogManager do
       expect(Dir.exist?(valid_dir)).to be true
     end
   end
+
+  describe '.get_last_timestamp' do
+    it 'returns nil if log does not exist' do
+      expect(described_class.get_last_timestamp(profile_id, container_name, '2026-06-26')).to be_nil
+    end
+
+    it 'returns nil if log has no docker timestamp' do
+      described_class.save_log(profile_id, container_name, '2026-06-26', "just some raw text\nno timestamp here")
+      expect(described_class.get_last_timestamp(profile_id, container_name, '2026-06-26')).to be_nil
+    end
+
+    it 'returns the correct RFC3339Nano timestamp from the last line' do
+      content = <<~LOG
+        2026-06-26T15:32:00.123456789Z [INFO] first line
+        2026-06-26T15:32:01.999999999Z [WARN] second line
+      LOG
+      described_class.save_log(profile_id, container_name, '2026-06-26', content)
+
+      ts = described_class.get_last_timestamp(profile_id, container_name, '2026-06-26')
+      expect(ts).to eq('2026-06-26T15:32:01.999999999Z')
+    end
+  end
+
+  describe '.merge_and_save' do
+    it 'saves the new content if local content does not exist' do
+      new_content = "2026-06-26T15:00:00Z new\n"
+      described_class.merge_and_save(profile_id, container_name, '2026-06-26', new_content)
+
+      expect(described_class.read_log(profile_id, container_name, '2026-06-26.log')).to eq(new_content)
+    end
+
+    it 'appends new content properly' do
+      described_class.save_log(profile_id, container_name, '2026-06-26', "line 1\n")
+      described_class.merge_and_save(profile_id, container_name, '2026-06-26', "line 2\n")
+
+      expect(described_class.read_log(profile_id, container_name, '2026-06-26.log')).to eq("line 1\nline 2\n")
+    end
+
+    it 'deduplicates if the first new line is the same as the last local line' do
+      local = "line 1\nboundary line\n"
+      new_chunk = "boundary line\nline 2\n"
+
+      described_class.save_log(profile_id, container_name, '2026-06-26', local)
+      described_class.merge_and_save(profile_id, container_name, '2026-06-26', new_chunk)
+
+      expect(described_class.read_log(profile_id, container_name,
+                                      '2026-06-26.log')).to eq("line 1\nboundary line\nline 2\n")
+    end
+  end
 end

@@ -66,11 +66,19 @@ RSpec.describe SSHClient do
   describe '#fetch_logs_by_date' do
     let(:ssh_session) { double('ssh_session') }
 
-    it 'returns logs for a specific date' do
+    before do
       allow(Net::SSH).to receive(:start).and_return(ssh_session)
-      expect(ssh_session).to receive(:exec!).with('docker logs --since "2026-06-18T00:00:00Z" --until "2026-06-18T23:59:59Z" container1').and_return('logs from the 18th')
       client.connect
+    end
+
+    it 'returns logs for a specific date using default start of day' do
+      expect(ssh_session).to receive(:exec!).with('docker logs --timestamps --since "2026-06-18T00:00:00Z" --until "2026-06-18T23:59:59Z" container1').and_return('logs from the 18th')
       expect(client.fetch_logs_by_date('container1', '2026-06-18')).to eq('logs from the 18th')
+    end
+
+    it 'uses since_exact parameter when provided' do
+      expect(ssh_session).to receive(:exec!).with('docker logs --timestamps --since "2026-06-18T15:32:00Z" --until "2026-06-18T23:59:59Z" container1').and_return('more logs')
+      expect(client.fetch_logs_by_date('container1', '2026-06-18', '2026-06-18T15:32:00Z')).to eq('more logs')
     end
   end
 end

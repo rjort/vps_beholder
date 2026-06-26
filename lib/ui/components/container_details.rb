@@ -9,10 +9,6 @@ module Components
   class ContainerDetails < Gtk::Box
     attr_accessor :on_back, :on_state_changed, :on_error, :on_info
 
-    # Triggered when an export action is requested from the preview
-    # Yields [container, date, content]
-    attr_accessor :on_export
-
     # Initializes the Details pane
     #
     # @param ssh_client [SSHClient] Client used for actions and log fetching
@@ -192,18 +188,24 @@ module Components
       container = @current_container
       date = @selected_date
 
-      dialog = Gtk::MessageDialog.new(message: 'Loading logs...', buttons: :none)
+      dialog = Gtk::MessageDialog.new(message: 'Loading logs (Auto-Sync)...', buttons: :none)
       dialog.transient_for = @parent_window
       dialog.present
 
       Thread.new do
-        content = @ssh_client.fetch_logs_by_date(container, date)
+        last_ts = Storage::LogManager.get_last_timestamp(@profile[:id], container, date)
+        content = @ssh_client.fetch_logs_by_date(container, date, last_ts)
+
+        Storage::LogManager.merge_and_save(@profile[:id], container, date, content)
+        final_content = Storage::LogManager.read_log(@profile[:id], container, "#{date}.log")
+
         GLib::Idle.add do
           dialog.destroy
-          if content.to_s.strip.empty?
+          if final_content.to_s.strip.empty?
             @on_info&.call('Nenhum log encontrado', "O container não gerou logs na data #{date}.")
           else
-            show_preview_window(container, date, content)
+            show_preview_window(container, date, final_content)
+            reload_local_logs
           end
           false
         end
@@ -263,14 +265,8 @@ module Components
     def show_preview_window(container, date, content)
       viewer = LogPreviewWindow.new(
         title: "Preview: #{container} - #{date}",
-        content: content,
-        mode: :preview,
-        container: container,
-        date: date
+        content: content
       )
-      viewer.on_export = proc do |c, d, ct|
-        @on_export&.call(c, d, ct)
-      end
       track_window(viewer)
       viewer.present
     end
