@@ -11,7 +11,8 @@ module Storage
     # @param password [String] The password to store
     # @return [Boolean] True if saved successfully, false otherwise
     def self.save(host, user, password)
-      cmd = ['secret-tool', 'store', '--label', "VPS Beholder: #{user}@#{host}", 'app', 'vps_beholder', 'host', host, 'user', user]
+      cmd = ['secret-tool', 'store', '--label', "VPS Beholder: #{user}@#{host}", 'app', 'vps_beholder', 'host', host,
+             'user', user]
       _stdout, _stderr, status = Open3.capture3(*cmd, stdin_data: password)
       status.success?
     rescue StandardError => e

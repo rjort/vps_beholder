@@ -61,13 +61,19 @@ class SSHClient
     raise "Failed to fetch logs: #{e.message}"
   end
 
-  def fetch_logs_by_date(container_name, date_str)
+  # Fetches logs for a container on a specific date, optionally starting from an exact timestamp.
+  #
+  # @param container_name [String] The name of the container
+  # @param date_str [String] The date in YYYY-MM-DD format
+  # @param since_exact [String, nil] An exact RFC3339Nano timestamp to fetch from (for lazy sync)
+  # @return [String] The logs content with Docker timestamps prepended
+  def fetch_logs_by_date(container_name, date_str, since_exact = nil)
     return '' unless @ssh
 
-    since_t = "#{date_str}T00:00:00Z"
+    since_t = since_exact || "#{date_str}T00:00:00Z"
     until_t = "#{date_str}T23:59:59Z"
 
-    output = @ssh.exec!("docker logs --since \"#{since_t}\" --until \"#{until_t}\" #{container_name}")
+    output = @ssh.exec!("docker logs --timestamps --since \"#{since_t}\" --until \"#{until_t}\" #{container_name}")
     output || ''
   rescue StandardError => e
     raise "Failed to fetch logs: #{e.message}"

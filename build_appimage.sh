@@ -17,12 +17,21 @@ cp com.vps.beholder.desktop "$APPDIR/vps_beholder.desktop"
 # Copy source code
 rsync -av --exclude='.git' --exclude='AppDir' --exclude='*.AppImage' . "$APPDIR/usr/src/vps_beholder/"
 
-# Find ASDF ruby and copy it
+# Find Ruby and copy it
 RUBY_PATH=$(asdf where ruby 2>/dev/null || echo "")
 if [ -z "$RUBY_PATH" ]; then
-    echo "Could not find ASDF ruby installation. Currently required for building the AppImage."
+    # Fallback for environments without ASDF (e.g. GitHub Actions)
+    RUBY_BIN=$(which ruby 2>/dev/null || echo "")
+    if [ -n "$RUBY_BIN" ]; then
+        RUBY_PATH=$(dirname "$(dirname "$RUBY_BIN")")
+    fi
+fi
+
+if [ -z "$RUBY_PATH" ] || [ ! -d "$RUBY_PATH" ]; then
+    echo "Could not find ruby installation. Currently required for building the AppImage."
     exit 1
 fi
+
 echo "Bundling Ruby from $RUBY_PATH..."
 cp -r "$RUBY_PATH" "$APPDIR/usr/ruby"
 

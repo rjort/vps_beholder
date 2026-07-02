@@ -16,7 +16,7 @@ RSpec.describe Storage::SecretManager do
       expect(Open3).to receive(:capture3)
         .with('secret-tool', 'store', '--label', "VPS Beholder: #{user}@#{host}", 'app', 'vps_beholder', 'host', host, 'user', user, stdin_data: password)
         .and_return(['', '', success_status])
-      
+
       expect(described_class.save(host, user, password)).to be true
     end
 
@@ -31,7 +31,7 @@ RSpec.describe Storage::SecretManager do
       expect(Open3).to receive(:capture3)
         .with('secret-tool', 'lookup', 'app', 'vps_beholder', 'host', host, 'user', user)
         .and_return([password, '', success_status])
-      
+
       expect(described_class.get(host, user)).to eq(password)
     end
 
@@ -51,7 +51,7 @@ RSpec.describe Storage::SecretManager do
       expect(Open3).to receive(:capture3)
         .with('secret-tool', 'clear', 'app', 'vps_beholder', 'host', host, 'user', user)
         .and_return(['', '', success_status])
-      
+
       expect(described_class.delete(host, user)).to be true
     end
   end

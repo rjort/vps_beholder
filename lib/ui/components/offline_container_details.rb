@@ -121,8 +121,7 @@ module Components
 
       viewer = LogPreviewWindow.new(
         title: "Lendo: #{file_name}",
-        content: content,
-        mode: :read
+        content: content
       )
       track_window(viewer)
       viewer.present

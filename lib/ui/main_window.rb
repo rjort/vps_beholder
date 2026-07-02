@@ -88,17 +88,6 @@ class MainWindow < Gtk::ApplicationWindow
     @details_component.on_state_changed = proc do |containers|
       @list_component.rebuild_ui(containers)
     end
-
-    @details_component.on_export = proc do |container, date, content|
-      export_current_logs(container, date, content)
-      @details_component.reload_local_logs
-    end
-  end
-
-  def export_current_logs(container, date, content)
-    Storage::LogManager.save_log(@profile[:id], container, date, content)
-  rescue StandardError => e
-    show_error_dialog('Error saving log', e.message)
   end
 
   def show_error_dialog(title, message)
