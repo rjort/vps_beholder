@@ -5,7 +5,9 @@ require 'fileutils'
 module Storage
   # Manages local storage of container logs, scoped by profile.
   class LogManager
+    # rubocop:disable Style/MutableConstant
     UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    # rubocop:enable Style/MutableConstant
 
     # Returns the base directory for all logs.
     # @return [String] Absolute path to the logs directory.
