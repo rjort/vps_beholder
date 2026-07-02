@@ -17,7 +17,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-4-dev dbus-x11 xvfb
+          sudo apt-get install -y libgtk-4-dev libgirepository1.0-dev pkg-config dbus-x11 xvfb
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
