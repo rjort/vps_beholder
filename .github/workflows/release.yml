@@ -1,0 +1,40 @@
+name: Release AppImage
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev curl rsync
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: false # We handle bundling inside the AppImage script
+
+      - name: Install bundler
+        run: gem install bundler
+
+      - name: Build AppImage
+        run: make appimage
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: VPS_Beholder-x86_64.AppImage
+          generate_release_notes: true
