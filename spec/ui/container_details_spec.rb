@@ -27,7 +27,8 @@ RSpec.describe Components::ContainerDetails do
   describe '#show_read_window' do
     it 'instantiates LogPreviewWindow for local files and tracks it' do
       # Mock the log reading
-      allow(Storage::LogManager).to receive(:read_log).with('test-uuid', nil, '2026-07-02.log').and_return('local content')
+      allow(Storage::LogManager).to receive(:read_log).with('test-uuid', nil,
+                                                            '2026-07-02.log').and_return('local content')
 
       expect(Components::LogPreviewWindow).to receive(:new).with(
         title: 'Lendo: 2026-07-02.log',
