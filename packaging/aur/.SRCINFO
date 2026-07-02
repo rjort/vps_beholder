@@ -1,0 +1,16 @@
+pkgbase = vps_beholder-appimage
+	pkgdesc = A tool to monitor and observe Docker containers over SSH on VPS
+	pkgver = 0.8.0_beta.3
+	pkgrel = 1
+	url = https://github.com/rjort/vps_beholder
+	arch = x86_64
+	license = MIT
+	depends = zlib
+	depends = hicolor-icon-theme
+	depends = gtk4
+	depends = fuse2
+	options = !strip
+	source = VPS_Beholder-0.8.0_beta.3.AppImage::https://github.com/rjort/vps_beholder/releases/download/v0.8.0-beta.3/VPS_Beholder-x86_64.AppImage
+	sha256sums = 0b171bd61823f07f35b4f58148f4b408c920f73d55a1daf873200f405d990c15
+
+pkgname = vps_beholder-appimage

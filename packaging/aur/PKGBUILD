@@ -1,0 +1,43 @@
+# Maintainer: Reuter Regis <reuter_junior@hotmail.com>
+pkgname=vps_beholder-appimage
+_pkgname=VPS_Beholder
+pkgver=0.8.0_beta.3
+pkgrel=1
+pkgdesc="A tool to monitor and observe Docker containers over SSH on VPS"
+arch=('x86_64')
+url="https://github.com/rjort/vps_beholder"
+license=('MIT')
+depends=('zlib' 'hicolor-icon-theme' 'gtk4' 'fuse2')
+options=('!strip')
+_tag="v${pkgver//_/-}"
+source=("${_pkgname}-${pkgver}.AppImage::https://github.com/rjort/vps_beholder/releases/download/${_tag}/VPS_Beholder-x86_64.AppImage")
+sha256sums=('0b171bd61823f07f35b4f58148f4b408c920f73d55a1daf873200f405d990c15')
+
+prepare() {
+    chmod +x "${_pkgname}-${pkgver}.AppImage"
+    # Extrai o conteúdo do AppImage para pegarmos o ícone, o .desktop e a licença
+    ./"${_pkgname}-${pkgver}.AppImage" --appimage-extract
+}
+
+package() {
+    # Instala o AppImage no diretório opt
+    install -d "${pkgdir}/opt/appimages"
+    install -m755 "${srcdir}/${_pkgname}-${pkgver}.AppImage" "${pkgdir}/opt/appimages/vps_beholder.AppImage"
+    
+    # Cria o atalho (symlink) em /usr/bin para ser acessível no terminal
+    install -d "${pkgdir}/usr/bin"
+    ln -s "/opt/appimages/vps_beholder.AppImage" "${pkgdir}/usr/bin/vps_beholder"
+    
+    # Instala o atalho do menu (Desktop Entry) e o Ícone
+    install -d "${pkgdir}/usr/share/applications"
+    install -d "${pkgdir}/usr/share/pixmaps"
+    
+    install -m644 "${srcdir}/squashfs-root/com.vps.beholder.desktop" "${pkgdir}/usr/share/applications/com.vps.beholder.desktop"
+    install -m644 "${srcdir}/squashfs-root/com.vps.beholder.png" "${pkgdir}/usr/share/pixmaps/com.vps.beholder.png"
+    
+    # Ajusta o caminho do Executável no atalho do menu
+    sed -i "s|Exec=vps_beholder|Exec=/usr/bin/vps_beholder|g" "${pkgdir}/usr/share/applications/com.vps.beholder.desktop"
+
+    # Instala o arquivo de Licença (obrigatório para licenças como MIT no Arch)
+    install -D -m644 "${srcdir}/squashfs-root/usr/src/vps_beholder/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
