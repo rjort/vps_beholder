@@ -8,7 +8,6 @@ pkgbase = vps_beholder-appimage
 	depends = zlib
 	depends = hicolor-icon-theme
 	depends = gtk4
-	depends = ruby
 	depends = fuse2
 	options = !strip
 	source = VPS_Beholder-0.8.0_beta.3.AppImage::https://github.com/rjort/vps_beholder/releases/download/v0.8.0-beta.3/VPS_Beholder-x86_64.AppImage
